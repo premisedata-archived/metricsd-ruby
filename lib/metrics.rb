@@ -343,14 +343,14 @@ class Metrics
 
   private
 
-  def send_stats(stat, delta, type, sample_rate=1)
+  def send_stats(stat, value, type, sample_rate=1)
     if sample_rate == 1 or rand < sample_rate
       # Replace Ruby module scoping with '.' and reserved chars (: | @) with underscores.
       stat  = stat.to_s.gsub('::', '.').tr(':|@', '_')
       rate  = "|@#{sample_rate}" unless sample_rate == 1
-      delta = ":#{delta}" if delta
+      value = ":#{value}" if value
       type  = "|#{type}"  if type
-      send_to_socket "#{prefix}#{stat}#{postfix}#{delta}#{type}#{rate}"
+      send_to_socket "#{prefix}#{stat}#{postfix}#{value}#{type}#{rate}"
     end
   end
 
