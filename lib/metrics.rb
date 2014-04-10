@@ -2,50 +2,50 @@ require 'socket'
 require 'forwardable'
 require 'json'
 
-# = Statsd: A Statsd client (https://github.com/etsy/statsd)
+# = Metrics: A metricsd client (https://github.com/premisedata/metricsd)
 #
-# @example Set up a global Statsd client for a server on localhost:8125
-#   $statsd = Statsd.new 'localhost', 8125
-# @example Set up a global Statsd client for a server on IPv6 port 8125
-#   $statsd = Statsd.new '::1', 8125
+# @example Set up a global Metrics for a server on localhost:8125
+#   $metrics = Metrics.new 'localhost', 8125
+# @example Set up a global Metrics for a server on IPv6 port 8125
+#   $metrics = Metrics.new '::1', 8125
 # @example Send some stats
-#   $statsd.increment 'garets'
-#   $statsd.timer 'glork', 320
-#   $statsd.gauge 'bork', 100
+#   $metrics.increment 'garets'
+#   $metrics.timer 'glork', 320
+#   $metrics.gauge 'bork', 100
 # @example Use {#timed} to time the execution of a block
-#   $statsd.timed('account.activate') { @account.activate! }
-# @example Create a namespaced statsd client and increment 'account.activate'
-#   statsd = Statsd.new('localhost').tap{|sd| sd.namespace = 'account'}
-#   statsd.increment 'activate'
+#   $metrics.timed('account.activate') { @account.activate! }
+# @example Create a namespaced Metrics and increment 'account.activate'
+#   metrics = Metrics.new('localhost').tap{|sd| sd.namespace = 'account'}
+#   metrics.increment 'activate'
 #
-# Statsd instances are thread safe for general usage, by using a thread local
+# Metrics instances are thread safe for general usage, by using a thread local
 # UDPSocket and carrying no state. The attributes are stateful, and are not
 # mutexed, it is expected that users will not change these at runtime in
 # threaded environments. If users require such use cases, it is recommend that
-# users either mutex around their Statsd object, or create separate objects for
+# users either mutex around their Metrics object, or create separate objects for
 # each namespace / host+port combination.
-class Statsd
+class Metrics
 
-  # = Batch: A batching statsd proxy
+  # = Batch: A batching Metrics proxy
   #
   # @example Batch a set of instruments using Batch and manual flush:
-  #   $statsd = Statsd.new 'localhost', 8125
-  #   batch = Statsd::Batch.new($statsd)
+  #   $metrics = Metrics.new 'localhost', 8125
+  #   batch = Metrics::Batch.new($metrics)
   #   batch.increment 'garets'
   #   batch.timer 'glork', 320
   #   batch.gauge 'bork', 100
   #   batch.flush
   #
-  # Batch is a subclass of Statsd, but with a constructor that proxies to a
-  # normal Statsd instance. It has it's own batch_size and namespace parameters
-  # (that inherit defaults from the supplied Statsd instance). It is recommended
+  # Batch is a subclass of Metrics, but with a constructor that proxies to a
+  # normal Metrics instance. It has it's own batch_size and namespace parameters
+  # (that inherit defaults from the supplied Metrics instance). It is recommended
   # that some care is taken if setting very large batch sizes. If the batch size
   # exceeds the allowed packet size for UDP on your network, communication
   # troubles may occur and data will be lost.
-  class Batch < Statsd
+  class Batch < Metrics
 
     extend Forwardable
-    def_delegators :@statsd,
+    def_delegators :@metrics,
       :namespace, :namespace=,
       :host, :host=,
       :port, :port=,
@@ -54,10 +54,10 @@ class Statsd
 
     attr_accessor :batch_size
 
-    # @param [Statsd] requires a configured Statsd instance
-    def initialize(statsd)
-      @statsd = statsd
-      @batch_size = statsd.batch_size
+    # @param [Metrics] requires a configured Metrics instance
+    def initialize(metrics)
+      @metrics = metrics
+      @batch_size = metrics.batch_size
       @backlog = []
     end
 
@@ -74,7 +74,7 @@ class Statsd
 
     def flush
       unless @backlog.empty?
-        @statsd.send_to_socket @backlog.join("\n")
+        @metrics.send_to_socket @backlog.join("\n")
         @backlog.clear
       end
     end
@@ -91,10 +91,10 @@ class Statsd
   end
 
   class Admin
-    # StatsD host. Defaults to 127.0.0.1.
+    # metricsd host. Defaults to 127.0.0.1.
     attr_reader :host
 
-    # StatsD admin port. Defaults to 8126.
+    # metricsd admin port. Defaults to 8126.
     attr_reader :port
 
     class << self
@@ -114,23 +114,23 @@ class Statsd
       @port = port || 8126
     end
 
-    # @param [String] host your statsd host
-    # @param [Integer] port your statsd port
+    # @param [String] host your metricsd host
+    # @param [Integer] port your metricsd port
     def initialize(host = '127.0.0.1', port = 8126)
       self.host, self.port = host, port
     end
 
-    # Reads all gauges from StatsD.
+    # Reads all gauges from metricsd.
     def gauges
       read_metric :gauges
     end
 
-    # Reads all timers from StatsD.
+    # Reads all timers from metricsd.
     def timers
       read_metric :timers
     end
 
-    # Reads all counters from StatsD.
+    # Reads all counters from metricsd.
     def counters
       read_metric :counters
     end
@@ -185,10 +185,10 @@ class Statsd
     end
 
     def send_to_socket(message)
-      self.class.logger.debug { "Statsd: #{message}" } if self.class.logger
+      self.class.logger.debug { "Metrics: #{message}" } if self.class.logger
       socket.write(message.to_s + "\n")
     rescue => boom
-      self.class.logger.error { "Statsd: #{boom.class} #{boom}" } if self.class.logger
+      self.class.logger.error { "Metrics: #{boom.class} #{boom}" } if self.class.logger
       nil
     end
 
@@ -205,20 +205,20 @@ class Statsd
     end
 
     def socket
-      Thread.current[:statsd_admin_socket] ||= TCPSocket.new(host, port)
+      Thread.current[:metricsd_admin_socket] ||= TCPSocket.new(host, port)
     end
   end
 
-  # A namespace to prepend to all statsd calls.
+  # A namespace to prepend to all metricsd calls.
   attr_reader :namespace
 
-  # StatsD host. Defaults to 127.0.0.1.
+  # metricsd host. Defaults to 127.0.0.1.
   attr_reader :host
 
-  # StatsD port. Defaults to 8125.
+  # metricsd port. Defaults to 8125.
   attr_reader :port
 
-  # StatsD namespace prefix, generated from #namespace
+  # metricsd namespace prefix, generated from #namespace
   attr_reader :prefix
 
   # The default batch size for new batches (default: 10)
@@ -232,8 +232,8 @@ class Statsd
     attr_accessor :logger
   end
 
-  # @param [String] host your statsd host
-  # @param [Integer] port your statsd port
+  # @param [String] host your metricsd host
+  # @param [Integer] port your metricsd port
   def initialize(host = '127.0.0.1', port = 8125)
     self.host, self.port = host, port
     @prefix = nil
@@ -321,9 +321,9 @@ class Statsd
   # larger packets. Batches are sent either when the packet is "full" (defined
   # by batch_size), or when the block completes, whichever is the sooner.
   #
-  # @yield [Batch] a statsd subclass that collects and batches instruments
+  # @yield [Batch] a Metrics subclass that collects and batches instruments
   # @example Batch two instument operations:
-  #   $statsd.batch do |batch|
+  #   $metrics.batch do |batch|
   #     batch.increment 'sys.requests'
   #     batch.gauge('user.count', User.count)
   #   end
@@ -334,10 +334,10 @@ class Statsd
   protected
 
   def send_to_socket(message)
-    self.class.logger.debug { "Statsd: #{message}" } if self.class.logger
+    self.class.logger.debug { "Metrics: #{message}" } if self.class.logger
     socket.send(message, 0, @host, @port)
   rescue => boom
-    self.class.logger.error { "Statsd: #{boom.class} #{boom}" } if self.class.logger
+    self.class.logger.error { "Metrics: #{boom.class} #{boom}" } if self.class.logger
     nil
   end
 
@@ -355,7 +355,7 @@ class Statsd
   end
 
   def socket
-    Thread.current[:statsd_socket] ||= UDPSocket.new addr_family
+    Thread.current[:metricsd_socket] ||= UDPSocket.new addr_family
   end
 
   def addr_family

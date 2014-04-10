@@ -1,16 +1,16 @@
 require 'helper'
 
-describe Statsd::Admin do
-  class Statsd::Admin
+describe Metrics::Admin do
+  class Metrics::Admin
     public :socket
   end
 
   before do
-    @admin = Statsd::Admin.new('localhost', 1234)
-    @socket = Thread.current[:statsd_admin_socket] = FakeTCPSocket.new
+    @admin = Metrics::Admin.new('localhost', 1234)
+    @socket = Thread.current[:metricsd_admin_socket] = FakeTCPSocket.new
   end
 
-  after { Thread.current[:statsd_socket] = nil }
+  after { Thread.current[:metricsd_socket] = nil }
 
   describe "#initialize" do
     it "should set the host and port" do
@@ -19,9 +19,9 @@ describe Statsd::Admin do
     end
 
     it "should default the host to 127.0.0.1 and port to 8126" do
-      statsd = Statsd::Admin.new
-      statsd.host.must_equal '127.0.0.1'
-      statsd.port.must_equal 8126
+      metrics = Metrics::Admin.new
+      metrics.host.must_equal '127.0.0.1'
+      metrics.port.must_equal 8126
     end
   end
 

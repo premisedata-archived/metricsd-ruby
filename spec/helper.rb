@@ -4,7 +4,7 @@ require 'minitest/autorun'
 require 'simplecov'
 SimpleCov.start
 
-require 'statsd'
+require 'metrics'
 require 'logger'
 
 class FakeUDPSocket
