@@ -344,6 +344,7 @@ class Metrics
   private
 
   def send_stats(stat, value, type, sample_rate=1)
+    raise ArgumentError, "value must be Integer, got: #{value} (#{value.class})" unless value.is_a? Integer
     if sample_rate == 1 or rand < sample_rate
       # Replace Ruby module scoping with '.' and reserved chars (: | @) with underscores.
       stat  = stat.to_s.gsub('::', '.').tr(':|@', '_')

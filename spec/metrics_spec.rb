@@ -88,8 +88,8 @@ describe Metrics do
     it "should send a message with a 'g' type, per the nearbuy fork" do
       @metrics.gauge('begrutten-suffusion', 536)
       @socket.recv.must_equal ['begrutten-suffusion:536|g']
-      @metrics.gauge('begrutten-suffusion', -107.3)
-      @socket.recv.must_equal ['begrutten-suffusion:-107.3|g']
+      @metrics.gauge('begrutten-suffusion', -107)
+      @socket.recv.must_equal ['begrutten-suffusion:-107|g']
     end
 
     describe "with a sample rate" do
@@ -134,6 +134,18 @@ describe Metrics do
         @metrics.timed('foobar', 0.5) { 'test' }
         @socket.recv.must_equal ['foobar:0|ms|@0.5']
       end
+    end
+  end
+
+  describe "#send_stats" do
+    it "should require value to be an Integer" do
+      @metrics.send(:send_stats, 'x', 3, :x) # no error
+      proc { @metrics.send(:send_stats, 'x', 3.14,     :x) }.must_raise ArgumentError
+      proc { @metrics.send(:send_stats, 'x', '3',      :x) }.must_raise ArgumentError
+      proc { @metrics.send(:send_stats, 'x', true,     :x) }.must_raise ArgumentError
+      proc { @metrics.send(:send_stats, 'x', nil,      :x) }.must_raise ArgumentError
+      proc { @metrics.send(:send_stats, 'x', [3],      :x) }.must_raise ArgumentError
+      proc { @metrics.send(:send_stats, 'x', {'x'=>3}, :x) }.must_raise ArgumentError
     end
   end
 
