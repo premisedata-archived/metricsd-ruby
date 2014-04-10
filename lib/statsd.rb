@@ -289,6 +289,19 @@ class Statsd
     count stat, -1, sample_rate
   end
 
+  # Mark a meter. Meters track the rate at which some event occurs.
+  # [http://metrics.codahale.com/manual/core/#man-core-meters]
+  def meter(stat, value, sample_rate=1)
+    send_stats stat, value, :m, sample_rate
+  end
+
+  # Report a histogram sample. Histograms track the following distribution stats
+  # using constant space: 50p, 75p, 98p, 99p, 99.9p, min, max, mean, stddev.
+  # [http://metrics.codahale.com/manual/core/#man-core-histograms]
+  def histo(stat, value, sample_rate=1)
+    send_stats stat, value, :h, sample_rate
+  end
+
   # Report a timer sample in millis. A timer is a histogram of millis plus a
   # meter that's marked on each report.
   # [http://metrics.codahale.com/manual/core/#man-core-timers]
@@ -333,9 +346,11 @@ class Statsd
   def send_stats(stat, delta, type, sample_rate=1)
     if sample_rate == 1 or rand < sample_rate
       # Replace Ruby module scoping with '.' and reserved chars (: | @) with underscores.
-      stat = stat.to_s.gsub('::', '.').tr(':|@', '_')
-      rate = "|@#{sample_rate}" unless sample_rate == 1
-      send_to_socket "#{prefix}#{stat}#{postfix}:#{delta}|#{type}#{rate}"
+      stat  = stat.to_s.gsub('::', '.').tr(':|@', '_')
+      rate  = "|@#{sample_rate}" unless sample_rate == 1
+      delta = ":#{delta}" if delta
+      type  = "|#{type}"  if type
+      send_to_socket "#{prefix}#{stat}#{postfix}#{delta}#{type}#{rate}"
     end
   end
 
