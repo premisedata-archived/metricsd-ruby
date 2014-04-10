@@ -101,29 +101,29 @@ describe Statsd do
     end
   end
 
-  describe "#timing" do
+  describe "#timer" do
     it "should format the message according to the statsd spec" do
-      @statsd.timing('foobar', 500)
+      @statsd.timer('foobar', 500)
       @socket.recv.must_equal ['foobar:500|ms']
     end
 
     describe "with a sample rate" do
       before { class << @statsd; def rand; 0; end; end } # ensure delivery
       it "should format the message according to the statsd spec" do
-        @statsd.timing('foobar', 500, 0.5)
+        @statsd.timer('foobar', 500, 0.5)
         @socket.recv.must_equal ['foobar:500|ms|@0.5']
       end
     end
   end
 
-  describe "#time" do
+  describe "#timed" do
     it "should format the message according to the statsd spec" do
-      @statsd.time('foobar') { 'test' }
+      @statsd.timed('foobar') { 'test' }
       @socket.recv.must_equal ['foobar:0|ms']
     end
 
     it "should return the result of the block" do
-      result = @statsd.time('foobar') { 'test' }
+      result = @statsd.timed('foobar') { 'test' }
       result.must_equal 'test'
     end
 
@@ -131,7 +131,7 @@ describe Statsd do
       before { class << @statsd; def rand; 0; end; end } # ensure delivery
 
       it "should format the message according to the statsd spec" do
-        @statsd.time('foobar', 0.5) { 'test' }
+        @statsd.timed('foobar', 0.5) { 'test' }
         @socket.recv.must_equal ['foobar:0|ms|@0.5']
       end
     end

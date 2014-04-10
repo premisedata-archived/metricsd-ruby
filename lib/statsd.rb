@@ -10,10 +10,10 @@ require 'json'
 #   $statsd = Statsd.new '::1', 8125
 # @example Send some stats
 #   $statsd.increment 'garets'
-#   $statsd.timing 'glork', 320
+#   $statsd.timer 'glork', 320
 #   $statsd.gauge 'bork', 100
-# @example Use {#time} to time the execution of a block
-#   $statsd.time('account.activate') { @account.activate! }
+# @example Use {#timed} to time the execution of a block
+#   $statsd.timed('account.activate') { @account.activate! }
 # @example Create a namespaced statsd client and increment 'account.activate'
 #   statsd = Statsd.new('localhost').tap{|sd| sd.namespace = 'account'}
 #   statsd.increment 'activate'
@@ -32,7 +32,7 @@ class Statsd
   #   $statsd = Statsd.new 'localhost', 8125
   #   batch = Statsd::Batch.new($statsd)
   #   batch.increment 'garets'
-  #   batch.timing 'glork', 320
+  #   batch.timer 'glork', 320
   #   batch.gauge 'bork', 100
   #   batch.flush
   #
@@ -292,15 +292,15 @@ class Statsd
   # Report a timer sample in millis. A timer is a histogram of millis plus a
   # meter that's marked on each report.
   # [http://metrics.codahale.com/manual/core/#man-core-timers]
-  def timing(stat, millis, sample_rate=1)
+  def timer(stat, millis, sample_rate=1)
     send_stats stat, millis, :ms, sample_rate
   end
 
-  # Report the running time of the provided block using {#timing}.
-  def time(stat, sample_rate=1)
+  # Report the running time of the provided block using {#timer}.
+  def timed(stat, sample_rate=1)
     start = Time.now
     result = yield
-    timing(stat, ((Time.now - start) * 1000).round, sample_rate)
+    timer(stat, ((Time.now - start) * 1000).round, sample_rate)
     result
   end
 
