@@ -291,8 +291,8 @@ class Metrics
 
   # Mark a meter. Meters track the rate at which some event occurs.
   # [http://metrics.codahale.com/manual/core/#man-core-meters]
-  def meter(stat, value, sample_rate=1)
-    send_stats stat, value, :m, sample_rate
+  def meter(stat, sample_rate=1)
+    send_stats stat, nil, nil, sample_rate
   end
 
   # Report a histogram sample. Histograms track the following distribution stats
@@ -344,7 +344,7 @@ class Metrics
   private
 
   def send_stats(stat, value, type, sample_rate=1)
-    raise ArgumentError, "value must be Integer, got: #{value} (#{value.class})" unless value.is_a? Integer
+    raise ArgumentError, "value must be Integer or nil, got: #{value} (#{value.class})" unless value.is_a? Integer or value == nil
     if sample_rate == 1 or rand < sample_rate
       # Replace Ruby module scoping with '.' and reserved chars (: | @) with underscores.
       stat  = stat.to_s.gsub('::', '.').tr(':|@', '_')
