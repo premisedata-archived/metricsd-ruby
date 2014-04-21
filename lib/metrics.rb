@@ -302,19 +302,19 @@ class Metrics
     send_stats stat, value, :h, sample_rate
   end
 
-  # Report a timer sample in millis. A timer is a histogram of millis plus a
-  # meter that's marked on each report.
-  # [http://metrics.codahale.com/manual/core/#man-core-timers]
-  def timer(stat, millis, sample_rate=1)
-    send_stats stat, millis, :ms, sample_rate
-  end
-
   # Report the running time of the provided block using {#timer}.
   def timed(stat, sample_rate=1)
     start = Time.now
     result = yield
     timer(stat, ((Time.now - start) * 1000).round, sample_rate)
     result
+  end
+
+  # Report a timer sample in millis. A timer is a histogram of millis plus a
+  # meter that's marked on each report.
+  # [http://metrics.codahale.com/manual/core/#man-core-timers]
+  def timer(stat, millis, sample_rate=1)
+    send_stats stat, millis, :ms, sample_rate
   end
 
   # Creates and yields a Batch that can be used to batch instrument reports into
