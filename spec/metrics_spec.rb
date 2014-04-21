@@ -138,12 +138,12 @@ describe Metrics do
   end
 
   describe "#send_stats" do
-    it "should require value to be an Integer" do
-      @metrics.send(:send_stats, 'x', 3, :x) # no error
+    it "should require value to be an Integer or nil" do
+      @metrics.send(:send_stats, 'x', 3,   :x) # no error
+      @metrics.send(:send_stats, 'x', nil, :x) # no error
       proc { @metrics.send(:send_stats, 'x', 3.14,     :x) }.must_raise ArgumentError
       proc { @metrics.send(:send_stats, 'x', '3',      :x) }.must_raise ArgumentError
       proc { @metrics.send(:send_stats, 'x', true,     :x) }.must_raise ArgumentError
-      proc { @metrics.send(:send_stats, 'x', nil,      :x) }.must_raise ArgumentError
       proc { @metrics.send(:send_stats, 'x', [3],      :x) }.must_raise ArgumentError
       proc { @metrics.send(:send_stats, 'x', {'x'=>3}, :x) }.must_raise ArgumentError
     end
