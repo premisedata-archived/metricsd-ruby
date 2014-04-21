@@ -305,9 +305,11 @@ class Metrics
   # Report the running time of the provided block using {#time}.
   def timed(stat, sample_rate=1)
     t = time(stat, sample_rate)
-    x = yield
-    t.stop
-    x
+    begin
+      yield
+    ensure
+      t.stop
+    end
   end
 
   # Report the time elapsed between 't = time("latency")' and 't.stop', using {#timer}.
