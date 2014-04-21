@@ -302,12 +302,26 @@ class Metrics
     send_stats stat, value, :h, sample_rate
   end
 
-  # Report the running time of the provided block using {#timer}.
+  # Report the running time of the provided block using {#time}.
   def timed(stat, sample_rate=1)
-    start = Time.now
-    result = yield
-    timer(stat, ((Time.now - start) * 1000).round, sample_rate)
-    result
+    t = time(stat, sample_rate)
+    x = yield
+    t.stop
+    x
+  end
+
+  # Report the time elapsed between 't = time("latency")' and 't.stop', using {#timer}.
+  def time(stat, sample_rate=1)
+    t = Object.new
+    class << t
+      attr_accessor :stat, :sample_rate, :start, :outer
+    end
+    t.stat        = stat
+    t.sample_rate = sample_rate
+    t.start       = Time.now
+    t.outer       = self
+    def t.stop() outer.timer(stat, ((Time.now - start) * 1000).round, sample_rate) end
+    t
   end
 
   # Report a timer sample in millis. A timer is a histogram of millis plus a
