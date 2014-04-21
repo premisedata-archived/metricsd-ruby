@@ -1,6 +1,7 @@
 require 'socket'
 require 'forwardable'
 require 'json'
+require 'ostruct'
 
 # = Metrics: A metricsd client (https://github.com/premisedata/metricsd)
 #
@@ -314,16 +315,11 @@ class Metrics
 
   # Report the time elapsed between 't = time("latency")' and 't.stop', using {#timer}.
   def time(stat, sample_rate=1)
-    t = Object.new
-    class << t
-      attr_accessor :stat, :sample_rate, :start, :outer
-    end
-    t.stat        = stat
-    t.sample_rate = sample_rate
-    t.start       = Time.now
-    t.outer       = self
-    def t.stop() outer.timer(stat, ((Time.now - start) * 1000).round, sample_rate) end
-    t
+    start = Time.now
+    OpenStruct.new.tap { |t|
+      def t.stop() _stop.call end # (Method body can't see local scope, use lambda instead)
+      t._stop = lambda { timer(stat, ((Time.now - start) * 1000).round, sample_rate) }
+    }
   end
 
   # Report a timer sample in millis. A timer is a histogram of millis plus a
