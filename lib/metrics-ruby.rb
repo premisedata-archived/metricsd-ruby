@@ -1,1 +1,1 @@
-require 'metricsd'
+require 'metrics'
