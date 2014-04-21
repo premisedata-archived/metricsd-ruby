@@ -328,7 +328,7 @@ class Metrics
   #     batch.gauge('user.count', User.count)
   #   end
   def batch(&block)
-    Batch.new(self).easy &block
+    Batch.new(self).easy(&block)
   end
 
   protected
