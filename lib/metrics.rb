@@ -317,7 +317,7 @@ class Metrics
   def time(stat, sample_rate=1)
     start = Time.now
     OpenStruct.new.tap { |t|
-      def t.stop() _stop.call end # (Method body can't see local scope, use lambda instead)
+      def t.stop() _stop.call end # (Method body can't see local scope, indirect through lambda)
       t._stop = lambda { timer(stat, ((Time.now - start) * 1000).round, sample_rate) }
     }
   end
